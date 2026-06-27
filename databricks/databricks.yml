@@ -97,3 +97,13 @@ resources:
       #       num_workers: 0
       #       spark_conf: { spark.databricks.cluster.profile: singleNode, spark.master: "local[*]" }
       #       custom_tags: { ResourceClass: SingleNode, project: brewquality }
+
+  # --- Lakeview DQ dashboard as IaC. Commented out so a normal `bundle deploy`
+  # stays warehouse-free; uncomment + pass --var warehouse_id=<id> to manage the
+  # dashboard through the bundle. (It was created here via the lakeview API so the
+  # main deploy doesn't require a SQL warehouse — see docs/dq-dashboards.md.)
+  # dashboards:
+  #   dq_kpis:
+  #     display_name: "BrewQuality DQ KPIs"
+  #     file_path: ./dashboards/dq_kpis.lvdash.json
+  #     warehouse_id: ${var.warehouse_id}

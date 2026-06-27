@@ -1,0 +1,168 @@
+{
+  "datasets": [
+    {
+      "name": "metrics_latest",
+      "displayName": "DQ metrics (latest run)",
+      "queryLines": [
+        "SELECT rule_name, dimension, severity, pass_rate, rows_failed, rows_evaluated\n",
+        "FROM brewquality_dev.ops.dq_metrics\n",
+        "WHERE run_id = (SELECT run_id FROM brewquality_dev.ops.dq_metrics ORDER BY measured_at DESC LIMIT 1)\n",
+        "ORDER BY pass_rate ASC"
+      ]
+    },
+    {
+      "name": "quarantine_by_rule",
+      "displayName": "Quarantine by rule",
+      "queryLines": [
+        "SELECT rule, count(*) AS rows\n",
+        "FROM (SELECT explode(failed_rules) AS rule FROM brewquality_dev.quarantine.orders)\n",
+        "GROUP BY rule ORDER BY rows DESC"
+      ]
+    },
+    {
+      "name": "layer_counts",
+      "displayName": "Layer row counts",
+      "queryLines": [
+        "SELECT 'silver (clean)' AS layer, count(*) AS rows FROM brewquality_dev.silver.orders\n",
+        "UNION ALL SELECT 'quarantine', count(*) FROM brewquality_dev.quarantine.orders"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "dq_kpis",
+      "displayName": "DQ KPIs",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "textbox_spec": "# BrewQuality — Data Quality KPIs\nPer-rule pass rates, quarantine breakdown, and clean vs quarantined for the latest pipeline run."
+          },
+          "position": { "x": 0, "y": 0, "width": 6, "height": 2 }
+        },
+        {
+          "widget": {
+            "name": "passrate_bar",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "metrics_latest",
+                  "fields": [
+                    { "name": "rule_name", "expression": "`rule_name`" },
+                    { "name": "pass_rate", "expression": "`pass_rate`" },
+                    { "name": "severity", "expression": "`severity`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": { "fieldName": "pass_rate", "scale": { "type": "quantitative" }, "displayName": "pass rate" },
+                "y": { "fieldName": "rule_name", "scale": { "type": "categorical" }, "displayName": "rule" },
+                "color": { "fieldName": "severity", "scale": { "type": "categorical" }, "displayName": "severity" }
+              },
+              "frame": { "title": "Pass rate per rule", "showTitle": true }
+            }
+          },
+          "position": { "x": 0, "y": 2, "width": 6, "height": 7 }
+        },
+        {
+          "widget": {
+            "name": "quarantine_bar",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "quarantine_by_rule",
+                  "fields": [
+                    { "name": "rule", "expression": "`rule`" },
+                    { "name": "rows", "expression": "`rows`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": { "fieldName": "rows", "scale": { "type": "quantitative" }, "displayName": "rows" },
+                "y": { "fieldName": "rule", "scale": { "type": "categorical" }, "displayName": "failed rule" }
+              },
+              "frame": { "title": "Quarantined rows by rule", "showTitle": true }
+            }
+          },
+          "position": { "x": 0, "y": 9, "width": 4, "height": 7 }
+        },
+        {
+          "widget": {
+            "name": "split_pie",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "layer_counts",
+                  "fields": [
+                    { "name": "layer", "expression": "`layer`" },
+                    { "name": "rows", "expression": "`rows`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": { "fieldName": "rows", "scale": { "type": "quantitative" }, "displayName": "rows" },
+                "color": { "fieldName": "layer", "scale": { "type": "categorical" }, "displayName": "layer" }
+              },
+              "frame": { "title": "Clean vs quarantined", "showTitle": true }
+            }
+          },
+          "position": { "x": 4, "y": 9, "width": 2, "height": 7 }
+        },
+        {
+          "widget": {
+            "name": "metrics_table",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "metrics_latest",
+                  "fields": [
+                    { "name": "rule_name", "expression": "`rule_name`" },
+                    { "name": "dimension", "expression": "`dimension`" },
+                    { "name": "severity", "expression": "`severity`" },
+                    { "name": "rows_failed", "expression": "`rows_failed`" },
+                    { "name": "pass_rate", "expression": "`pass_rate`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  { "fieldName": "rule_name", "displayName": "rule" },
+                  { "fieldName": "dimension", "displayName": "dimension" },
+                  { "fieldName": "severity", "displayName": "severity" },
+                  { "fieldName": "rows_failed", "displayName": "rows failed" },
+                  { "fieldName": "pass_rate", "displayName": "pass rate" }
+                ]
+              },
+              "frame": { "title": "Per-rule KPIs", "showTitle": true }
+            }
+          },
+          "position": { "x": 0, "y": 16, "width": 6, "height": 6 }
+        }
+      ]
+    }
+  ]
+}

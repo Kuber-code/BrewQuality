@@ -49,6 +49,7 @@ Provision → bootstrap → deploy → teardown:
 Cost control + stop/rebuild: [`docs/azure-operations.md`](docs/azure-operations.md).
 Deep dive: [`docs/azure-databricks-senior-guide.md`](docs/azure-databricks-senior-guide.md).
 Why-this-not-that: [`docs/tech-alternatives.md`](docs/tech-alternatives.md).
+DQ dashboards (notebook + Lakeview): [`docs/dq-dashboards.md`](docs/dq-dashboards.md).
 
 ## Architecture
 
