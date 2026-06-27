@@ -46,14 +46,13 @@ def main() -> int:
             f"[{MIN_OVERALL_CLEAN_FRACTION}, {MAX_OVERALL_CLEAN_FRACTION}]"
         )
 
-    # No silver order_id may also appear in quarantine (clean/quarantine disjoint).
-    leaked = (
-        silver.select("order_id")
-        .join(quarantine.select("order_id").distinct(), "order_id", "inner")
-        .count()
-    )
-    if leaked:
-        failures.append(f"{leaked} order_id(s) present in BOTH silver and quarantine")
+    # Silver must be deduplicated: every order_id appears at most once. (A dup's
+    # first copy is kept in silver and the extra is quarantined, so the *same*
+    # order_id legitimately appears in both tables — that's expected. What must
+    # never happen is a duplicate surviving *inside* silver.)
+    silver_dupes = silver.count() - silver.select("order_id").distinct().count()
+    if silver_dupes:
+        failures.append(f"{silver_dupes} duplicate order_id(s) survived into silver")
 
     # Show the per-rule KPI table for the latest run (this is what the dashboard plots).
     latest = metrics.orderBy(F.col("measured_at").desc()).limit(len(_rule_names(metrics)))
