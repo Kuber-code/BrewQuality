@@ -1,0 +1,45 @@
+# --- Interview prep materials (kept local, NOT part of the public portfolio) ---
+Heineken_Portfolio_Projects_Plan.md
+Heineken_Data_Quality_Engineer_Interview_QA.md
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Spark / Delta local artifacts ---
+spark-warehouse/
+metastore_db/
+derby.log
+*.crc
+.lakehouse/
+data/lake/
+
+# --- Generated raw data (regenerated via `make data`) ---
+data/raw/
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Windows-only Spark deps (winutils.exe / hadoop.dll), fetched by setup script ---
+.hadoop/
+
+# --- Databricks ---
+.databricks/
+.databricks-login.json

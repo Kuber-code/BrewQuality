@@ -1,0 +1,9 @@
+# Spark 3.5.x matches the Databricks runtime (DBR 15.4 LTS) — kept intentionally.
+pyspark==3.5.3
+delta-spark==3.2.1
+pyarrow>=15.0
+# setuptools provides the `distutils` shim PySpark 3.5 needs on Python 3.12+
+# (distutils was removed from the stdlib in 3.12).
+setuptools<81
+faker>=24.0
+pytest>=8.0

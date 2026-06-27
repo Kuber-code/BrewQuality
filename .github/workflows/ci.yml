@@ -1,0 +1,47 @@
+name: ci
+
+# CI is the DQ gate, shifted left: tests must pass AND the pipeline must run
+# end-to-end with DQ metrics inside expected bounds before anything merges.
+# Runs on Linux, where Spark needs no winutils — no Windows-specific setup.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # --- unit tests: transformations + every DQ rule ---
+      - name: Run tests
+        run: pytest
+
+      # --- integration test: full pipeline on a generated sample ---
+      - name: Generate sample data
+        run: python -m brewquality.generate_data --orders 3000 --customers 300 --seed 7
+
+      - name: Run pipeline (bronze -> silver -> gold)
+        run: python -m brewquality.pipeline --reset
+
+      # --- audit: assert DQ KPIs are within expected bounds (Write-Audit-Publish) ---
+      - name: Audit DQ metrics
+        run: python -m brewquality.ci_audit
