@@ -26,7 +26,7 @@ targets:
     variables:
       catalog: brewquality_dev
     workspace:
-      host: https://adb-XXXX.azuredatabricks.net
+      host: https://adb-7405608746580780.0.azuredatabricks.net
 
   staging:
     variables:
@@ -46,6 +46,11 @@ resources:
     brewquality_pipeline:
       name: "[${bundle.target}] BrewQuality DQ pipeline"
       # ingest -> validate (DQ gate) -> build gold -> publish KPIs, with retries.
+      # Compute: SERVERLESS. The tasks declare no cluster, so Databricks provisions
+      # and scales the compute itself — nothing to size, scales to zero, and it
+      # sidesteps VM-SKU availability on a restricted subscription (Free Trial).
+      # The silver gate installs the brewquality wheel via %pip from a UC volume:
+      # serverless notebook tasks get dependencies in-notebook, not via `libraries`.
       tasks:
         - task_key: bronze_ingest
           notebook_task:
@@ -60,7 +65,7 @@ resources:
             notebook_path: ./notebooks/02_silver_dq_gate.py
             base_parameters:
               catalog: ${var.catalog}
-          # one retry on transient failure (cluster/spot), then alert.
+          # one retry on transient failure, then alert.
           max_retries: 1
           min_retry_interval_millis: 60000
 
@@ -81,13 +86,14 @@ resources:
         on_failure:
           - data-quality-team@example.com
 
-      # Jobs cluster: spins up for the run, tears down after (cost-efficient for
-      # automated pipelines). On Free Edition this is serverless instead.
-      job_clusters:
-        - job_cluster_key: default
-          new_cluster:
-            spark_version: 15.4.x-scala2.12
-            node_type_id: Standard_DS3_v2
-            autoscale:
-              min_workers: 1
-              max_workers: 4
+      # --- Classic single-node alternative (use when the subscription HAS the VM
+      # SKU + core quota). Add `job_cluster_key: default` back onto each task and
+      # the brewquality wheel as a task `libraries: [{whl: ../dist/*.whl}]`.
+      # job_clusters:
+      #   - job_cluster_key: default
+      #     new_cluster:
+      #       spark_version: 15.4.x-scala2.12
+      #       node_type_id: Standard_DS3_v2     # 4 vCPU / 14 GB
+      #       num_workers: 0
+      #       spark_conf: { spark.databricks.cluster.profile: singleNode, spark.master: "local[*]" }
+      #       custom_tags: { ResourceClass: SingleNode, project: brewquality }

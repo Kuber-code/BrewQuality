@@ -21,12 +21,17 @@ def prepare_orders(
 ) -> DataFrame:
     """Add typed + relational columns used by ORDER_RULES."""
     # Safe casts: bad strings -> NULL, surfaced by the validity/completeness rules.
+    # We use TRY_CAST (not plain cast / to_date) because Databricks runs in ANSI
+    # SQL mode, where casting "abc"->int or parsing "2025-13-40" *throws* instead
+    # of yielding NULL. TRY_CAST returns NULL on bad input on both Spark 3.5 (local)
+    # and Spark 4.x ANSI (Databricks) — which is exactly what a DQ gate wants:
+    # tolerate the bad value, NULL it, and let the rule catch it.
     df = (
-        orders.withColumn("quantity_int", F.col("quantity").cast("int"))
-        .withColumn("order_amount_dbl", F.col("order_amount").cast("double"))
-        .withColumn("unit_price_dbl", F.col("unit_price").cast("double"))
-        # to_date returns NULL for "2025-13-40" — exactly what validity_order_date wants.
-        .withColumn("order_date_parsed", F.to_date(F.col("order_date"), "yyyy-MM-dd"))
+        orders.withColumn("quantity_int", F.expr("try_cast(quantity as int)"))
+        .withColumn("order_amount_dbl", F.expr("try_cast(order_amount as double)"))
+        .withColumn("unit_price_dbl", F.expr("try_cast(unit_price as double)"))
+        # try_cast to date parses ISO yyyy-MM-dd and NULLs "2025-13-40".
+        .withColumn("order_date_parsed", F.expr("try_cast(order_date as date)"))
     )
 
     # uniqueness: keep the first occurrence of each order_id, flag the rest as

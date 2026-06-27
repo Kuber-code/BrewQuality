@@ -43,3 +43,6 @@ Thumbs.db
 # --- Databricks ---
 .databricks/
 .databricks-login.json
+
+# --- Local Azure provisioning state (resource names; never secrets) ---
+.azure/

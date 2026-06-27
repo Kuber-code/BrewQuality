@@ -8,6 +8,32 @@ ADLS Gen2. Principle throughout: **no plaintext credentials in notebooks or Git*
 > stand it up, screenshot it, and document it. Maps 1:1 to AWS IAM
 > roles / least-privilege, which I've used in production.
 
+## What was actually provisioned (this is real, not a diagram)
+
+Stood up with [`scripts/azure_provision.ps1`](../scripts/azure_provision.ps1),
+torn down with [`scripts/azure_teardown.ps1`](../scripts/azure_teardown.ps1):
+
+| Resource | Name | Role |
+|---|---|---|
+| Resource group | `rg-brewquality` (West Europe) | container for everything |
+| ADLS Gen2 storage | `stbrewq…` (HNS on) + container `lake` | the Delta files |
+| Databricks workspace | `dbw-brewquality` (premium) | the lakehouse |
+| Access Connector | `ac-brewquality` (System-assigned MI) | UC→ADLS, **no keys** |
+| Key Vault | `kv-brewq-…` | secret store |
+| Service Principal | `sp-brewquality-cicd` | CI/CD deploy identity (secret in KV) |
+
+Unity Catalog wiring: storage credential `brewquality_mi_cred` (the Access
+Connector MI) → external location `brewquality_lake` → catalog `brewquality_dev`
+with schemas bronze/silver/gold/quarantine/ops and a landing + libs volume. A
+**Key-Vault-backed secret scope** `brewquality-kv` exposes vault secrets to
+notebooks via `dbutils.secrets.get(...)` with nothing in code.
+
+> **Compute note:** the job runs on **serverless** — this trial's classic VM SKUs
+> were capacity-restricted (`SkuNotAvailable`), and serverless needs no VM sizing
+> at all. The classic single-node alternative is kept (commented) in
+> `databricks/databricks.yml`. See the deep-dive in
+> [`azure-databricks-senior-guide.md`](azure-databricks-senior-guide.md).
+
 ## Storage — ADLS Gen2
 
 Azure Data Lake Storage Gen2 = Blob storage with a **hierarchical namespace**

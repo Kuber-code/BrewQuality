@@ -46,6 +46,15 @@ here): lint → `pytest` → `bundle validate` → deploy staging → integratio
 **Service Principal**, not a person. This is the JD's "end-to-end CI/CD for
 Databricks using Azure DevOps".
 
+> **This bundle was actually deployed and run** on the `dev` target against a real
+> Azure Databricks workspace. Two serverless-specific notes worth knowing:
+> - the job runs on **serverless** (no VM SKU), so the silver notebook installs
+>   the wheel in-notebook: `%pip install --no-deps <volume>/…whl` — `--no-deps`
+>   because the runtime already provides pyspark/delta and the wheel's pinned
+>   pyspark would otherwise conflict;
+> - **`.cache()`/`.persist()` are unsupported on serverless** (Spark Connect) — the
+>   notebook recomputes the plan instead.
+
 ## Phase 6 — Azure security
 
 See [`../docs/azure-setup.md`](../docs/azure-setup.md): Key Vault-backed secret

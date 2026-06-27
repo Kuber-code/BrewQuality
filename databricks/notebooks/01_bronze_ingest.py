@@ -22,8 +22,12 @@ customers = with_audit(spark.read.option("header", True).csv(f"{VOLUME}/customer
 products = with_audit(spark.read.option("multiLine", True).json(f"{VOLUME}/products.json"), "products.json")
 
 # COMMAND ----------
-orders.write.format("delta").mode("append").option("mergeSchema", True).saveAsTable(f"{catalog}.bronze.orders")
-customers.write.format("delta").mode("append").saveAsTable(f"{catalog}.bronze.customers")
-products.write.format("delta").mode("append").saveAsTable(f"{catalog}.bronze.products")
+# Idempotent re-ingest of the current landing snapshot: overwrite, so re-running
+# the job doesn't stack duplicate copies of every order (which would make the
+# uniqueness rule fail en masse). In production bronze is append-only with a
+# MERGE on a load key; for a repeatable demo, overwrite the snapshot.
+orders.write.format("delta").mode("overwrite").option("overwriteSchema", True).saveAsTable(f"{catalog}.bronze.orders")
+customers.write.format("delta").mode("overwrite").option("overwriteSchema", True).saveAsTable(f"{catalog}.bronze.customers")
+products.write.format("delta").mode("overwrite").option("overwriteSchema", True).saveAsTable(f"{catalog}.bronze.products")
 
 print("bronze ingest complete")

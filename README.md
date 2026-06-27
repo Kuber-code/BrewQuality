@@ -13,6 +13,39 @@ unit-tested in **CI**, and monitored with **DQ KPIs + alerting**.
 > engineering rigour (tests, IaC, CI gates, an incident runbook) is the point —
 > data quality done the way you'd run a production system.
 
+## ✅ Verified on real Azure Databricks (not just locally)
+
+Provisioned and run end-to-end on Azure: premium workspace, **Unity Catalog** over
+**ADLS Gen2** via an **Access Connector managed identity** (no keys), **Key-Vault**
+secret scope, deployed as a **Databricks Asset Bundle**, executed as a
+**serverless Workflow** (bronze → DQ gate → gold), all tasks green. Numbers from
+the actual run (`brewquality_dev` catalog):
+
+| Layer | Rows | |
+|---|---|---|
+| `bronze.orders` | **3040** | raw ingested |
+| `silver.orders` | **2429** | clean (passed the gate) |
+| `quarantine.orders` | **611** | failed a hard rule (with reason) |
+| `gold.fact_sales` | **2429** | trusted star-schema fact |
+
+Per-rule DQ KPIs (from `ops.dq_metrics`), all hard rules above the 0.80 SLA:
+
+| Rule | Dimension | Sev | Pass rate |
+|---|---|---|---|
+| uniqueness_order_id | uniqueness | error | 0.987 |
+| validity_order_date | validity | error | 0.970 |
+| integrity_product_id | integrity | error | 0.969 |
+| validity_quantity_positive | validity | error | 0.967 |
+| completeness_order_amount | completeness | error | 0.965 |
+| completeness_customer_id | completeness | error | 0.963 |
+| integrity_customer_id | integrity | error | 0.940 |
+| accuracy_amount_matches | accuracy | **warn** | 0.929 (soft — alert, don't block) |
+
+Provision/teardown: [`scripts/azure_provision.ps1`](scripts/azure_provision.ps1) ·
+[`scripts/azure_deploy.ps1`](scripts/azure_deploy.ps1) ·
+[`scripts/azure_teardown.ps1`](scripts/azure_teardown.ps1). Deep dive:
+[`docs/azure-databricks-senior-guide.md`](docs/azure-databricks-senior-guide.md).
+
 ## Architecture
 
 ```mermaid

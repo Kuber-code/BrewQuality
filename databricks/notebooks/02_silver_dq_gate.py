@@ -7,13 +7,23 @@
 # MAGIC quarantined with reasons; clean rows build silver; metrics land in `ops`.
 
 # COMMAND ----------
+# On serverless, a notebook task installs its dependencies in-notebook. We pull
+# the SAME tested wheel that CI builds (uploaded to a UC volume by the deploy
+# script). --no-deps: the runtime already provides pyspark/delta/pandas, and the
+# wheel must NOT try to install its pinned pyspark (conflicts with the runtime).
+# MAGIC %pip install --no-deps /Volumes/brewquality_dev/ops/libs/brewquality-0.1.0-py3-none-any.whl
+
+# COMMAND ----------
+dbutils.library.restartPython()
+
+# COMMAND ----------
 dbutils.widgets.text("catalog", "brewquality_dev")
 catalog = dbutils.widgets.get("catalog")
 
 import uuid
 from pyspark.sql import functions as F
 
-# Installed as a wheel by the Asset Bundle — same code unit-tested in CI.
+# Installed above from the wheel — same code unit-tested in CI.
 from brewquality.dq import engine
 from brewquality.dq.prepare import prepare_orders
 from brewquality.dq.rules import ORDER_RULES
@@ -34,7 +44,9 @@ products.select("product_id", "product_name", "category", "unit_price").write.fo
 
 # COMMAND ----------
 prepared = prepare_orders(orders, products, silver_customers)
-evaluated = engine.evaluate(prepared, ORDER_RULES).cache()
+# NB: no .cache() here — PERSIST/CACHE is unsupported on serverless (Spark Connect).
+# Serverless caches results server-side; recomputing the lazy plan is fine.
+evaluated = engine.evaluate(prepared, ORDER_RULES)
 clean, quarantine = engine.split(evaluated)
 
 _silver_order_columns(clean).write.format("delta").mode("overwrite").saveAsTable(f"{catalog}.silver.orders")
