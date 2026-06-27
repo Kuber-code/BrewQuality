@@ -46,10 +46,16 @@ docs/
   runbook-data-incident.md   SRE detect→contain→root-cause→fix→prevent
   azure-setup.md             Key Vault / SP / Managed Identity / ADLS
   azure-databricks-senior-guide.md   senior cheat-sheet (+ smaczki)
+  azure-operations.md        cost control, stop, and rebuild runbook
+  tech-alternatives.md       alternative techs per component + trade-offs
   interview-heineken-code-map.md     code → interview-question map
+  PROJECT_REPORT.md · ROADMAP.md
 scripts/
-  azure_provision.ps1 / azure_teardown.ps1   reproducible Azure footprint
-  setup_hadoop_win.ps1                        local Windows Spark helper
+  azure_provision.ps1   Azure resources (RG, ADLS, workspace, MI, KV, SP)
+  azure_bootstrap.ps1   UC objects, secret scope, data upload (inside Databricks)
+  azure_deploy.ps1      build wheel + deploy bundle + run Workflow
+  azure_teardown.ps1    delete everything (cost -> 0)
+  setup_hadoop_win.ps1  local Windows Spark helper
 tests/                unit tests for transforms + every DQ rule
 .github/workflows/ci.yml   tests + pipeline + DQ audit gate (Linux)
 ```

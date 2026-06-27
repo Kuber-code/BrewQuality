@@ -41,10 +41,14 @@ Per-rule DQ KPIs (from `ops.dq_metrics`), all hard rules above the 0.80 SLA:
 | integrity_customer_id | integrity | error | 0.940 |
 | accuracy_amount_matches | accuracy | **warn** | 0.929 (soft — alert, don't block) |
 
-Provision/teardown: [`scripts/azure_provision.ps1`](scripts/azure_provision.ps1) ·
-[`scripts/azure_deploy.ps1`](scripts/azure_deploy.ps1) ·
-[`scripts/azure_teardown.ps1`](scripts/azure_teardown.ps1). Deep dive:
-[`docs/azure-databricks-senior-guide.md`](docs/azure-databricks-senior-guide.md).
+Provision → bootstrap → deploy → teardown:
+[`azure_provision.ps1`](scripts/azure_provision.ps1) ·
+[`azure_bootstrap.ps1`](scripts/azure_bootstrap.ps1) ·
+[`azure_deploy.ps1`](scripts/azure_deploy.ps1) ·
+[`azure_teardown.ps1`](scripts/azure_teardown.ps1).
+Cost control + stop/rebuild: [`docs/azure-operations.md`](docs/azure-operations.md).
+Deep dive: [`docs/azure-databricks-senior-guide.md`](docs/azure-databricks-senior-guide.md).
+Why-this-not-that: [`docs/tech-alternatives.md`](docs/tech-alternatives.md).
 
 ## Architecture
 

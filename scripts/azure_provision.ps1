@@ -61,6 +61,28 @@ az keyvault secret set --vault-name $KeyVault -n "sp-cicd-tenant-id"     --value
 # Workspace (premium = Unity Catalog + secret scopes). Takes ~8 minutes.
 az databricks workspace create -n $Workspace -g $Rg -l $Location --sku premium | Out-Null
 $wsUrl = az databricks workspace show -n $Workspace -g $Rg --query workspaceUrl -o tsv
+$kvId  = az keyvault show -n $KeyVault -g $Rg --query id -o tsv
+$sub   = az account show --query id -o tsv
+
+# Persist everything the bootstrap/deploy scripts need (gitignored — names only).
+$dir = Join-Path (Split-Path -Parent $PSScriptRoot) ".azure"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+@"
+`$LOCATION='$Location'
+`$RG='$Rg'
+`$STORAGE='$Storage'
+`$CONTAINER='$Container'
+`$WORKSPACE='$Workspace'
+`$ACCESS_CONNECTOR='$AccessConn'
+`$KEYVAULT='$KeyVault'
+`$SP_NAME='$SpName'
+`$SP_APP_ID='$($sp.appId)'
+`$MI_PRINCIPAL='$miPrincipal'
+`$SUBSCRIPTION='$sub'
+`$KV_ID='$kvId'
+`$WS_URL='https://$wsUrl'
+"@ | Set-Content "$dir\env.ps1" -Encoding UTF8
 
 Write-Host "Provisioned. Workspace: https://$wsUrl"
-Write-Host "Storage=$Storage  KeyVault=$KeyVault  SP appId=$($sp.appId)  MI principal=$miPrincipal"
+Write-Host "Wrote resource names to .azure/env.ps1"
+Write-Host "Next: pwsh scripts/azure_bootstrap.ps1"
