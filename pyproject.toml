@@ -11,6 +11,7 @@ dependencies = [
     "pyspark==3.5.3",
     "delta-spark==3.2.1",
     "pyarrow>=15.0",
+    "pandas>=2.0",
     # distutils shim for PySpark 3.5 on Python 3.12+ (distutils left the stdlib).
     "setuptools<81",
     "faker>=24.0",
